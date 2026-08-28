@@ -85,7 +85,12 @@ export default function (pi: ExtensionAPI): void {
           playExclamation();
         } else if (data === "?") {
           playQuestion();
-        } else if (data === "." || data === "," || data === ";" || data === ":") {
+        } else if (
+          data === "." ||
+          data === "," ||
+          data === ";" ||
+          data === ":"
+        ) {
           playPunctuation();
         }
 
@@ -102,11 +107,31 @@ export default function (pi: ExtensionAPI): void {
     description: "Nastavení zvukových efektů TUI",
     getArgumentCompletions: (prefix: string) => {
       const options = [
-        { value: "sound on", label: "on", description: "Zapnout zvukové efekty" },
-        { value: "sound off", label: "off", description: "Vypnout zvukové efekty" },
-        { value: "sound test", label: "test", description: "Otestovat zvuky kláves" },
-        { value: "sound status", label: "status", description: "Zobrazit stav zvuku" },
-        { value: "sound help", label: "help", description: "Zobrazit nápovědu" },
+        {
+          value: "sound on",
+          label: "on",
+          description: "Zapnout zvukové efekty",
+        },
+        {
+          value: "sound off",
+          label: "off",
+          description: "Vypnout zvukové efekty",
+        },
+        {
+          value: "sound test",
+          label: "test",
+          description: "Otestovat zvuky kláves",
+        },
+        {
+          value: "sound status",
+          label: "status",
+          description: "Zobrazit stav zvuku",
+        },
+        {
+          value: "sound help",
+          label: "help",
+          description: "Zobrazit nápovědu",
+        },
       ];
       const filtered = options.filter((o) =>
         o.value.toLowerCase().startsWith(prefix.trim().toLowerCase()),
