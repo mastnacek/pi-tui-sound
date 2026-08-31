@@ -103,43 +103,48 @@ export default function (pi: ExtensionAPI): void {
     cleanupAudioWorker();
   });
 
+  const SOUND_DOCS: Record<string, string> = {
+    on: "Zapnout zvukové efekty",
+    off: "Vypnout zvukové efekty",
+    test: "Otestovat zvuky kláves",
+    status: "Zobrazit stav zvuku",
+    help: "Zobrazit nápovědu",
+  };
+
   pi.registerCommand("sound", {
     description: "Nastavení zvukových efektů TUI",
     getArgumentCompletions: (prefix: string) => {
-      const options = [
-        {
-          value: "sound on",
-          label: "on",
-          description: "Zapnout zvukové efekty",
-        },
-        {
-          value: "sound off",
-          label: "off",
-          description: "Vypnout zvukové efekty",
-        },
-        {
-          value: "sound test",
-          label: "test",
-          description: "Otestovat zvuky kláves",
-        },
-        {
-          value: "sound status",
-          label: "status",
-          description: "Zobrazit stav zvuku",
-        },
-        {
-          value: "sound help",
-          label: "help",
-          description: "Zobrazit nápovědu",
-        },
-      ];
-      const filtered = options.filter((o) =>
-        o.value.toLowerCase().startsWith(prefix.trim().toLowerCase()),
-      );
-      return filtered.length > 0 ? filtered : null;
+      const tokens = prefix.split(/\s+/).filter(Boolean);
+      const trailingSpace = /\s$/.test(prefix);
+      if (tokens.length > 1 || (trailingSpace && tokens.length === 1)) {
+        return null;
+      }
+      const typed = (tokens[0] ?? "").toLowerCase();
+      const items = Object.entries(SOUND_DOCS)
+        .filter(([key]) => key.toLowerCase().startsWith(typed))
+        .map(([value, description]) => ({ value, label: value, description }));
+      return items.length > 0 ? items : null;
     },
     handler: async (args: string, ctx: ExtensionCommandContext) => {
-      const sub = args.trim().toLowerCase();
+      const tokens = args.trim().split(/\s+/).filter(Boolean);
+      const sub = (tokens[0] ?? "").toLowerCase();
+
+      if (!sub || sub === "help" || sub === "-h" || sub === "--help") {
+        ctx.ui.notify(
+          [
+            "🔊 pi-tui-sound — Správa zvuků TUI",
+            "",
+            "Příkazy:",
+            "  /sound on     — Zapnout zvuky",
+            "  /sound off    — Vypnout zvuky",
+            "  /sound test   — Přehrát testovací sadu",
+            "  /sound status — Zobrazit aktuální stav",
+            "  /sound help   — Zobrazit tuto nápovědu",
+          ].join("\n"),
+          "info",
+        );
+        return;
+      }
 
       if (sub === "on") {
         isEnabled = true;
@@ -172,16 +177,8 @@ export default function (pi: ExtensionAPI): void {
       }
 
       ctx.ui.notify(
-        [
-          "🔊 pi-tui-sound — Správa zvuků TUI",
-          "",
-          "Příkazy:",
-          "  /sound on     — Zapnout zvuky",
-          "  /sound off    — Vypnout zvuky",
-          "  /sound test   — Přehrát testovací sadu",
-          "  /sound status — Zobrazit aktuální stav",
-        ].join("\n"),
-        "info",
+        `Neznámý příkaz "${sub}". Použijte: /sound help`,
+        "warning",
       );
     },
   });
