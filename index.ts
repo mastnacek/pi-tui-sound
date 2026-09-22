@@ -4,10 +4,29 @@ import type {
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { spawn, type ChildProcess } from "node:child_process";
-import { setTimeout } from "node:timers";
+import { clearTimeout, setTimeout } from "node:timers";
 
 let audioWorker: ChildProcess | null = null;
 let isEnabled = true;
+
+/**
+ * Timers scheduled while the session runs. Tracked so they can be cleared on
+ * session_shutdown (AGENTS.md §6) instead of firing into a dead session.
+ */
+const pendingTimers = new Set<ReturnType<typeof setTimeout>>();
+
+function scheduleTone(fn: () => void, delayMs: number): void {
+  const timer = setTimeout(() => {
+    pendingTimers.delete(timer);
+    fn();
+  }, delayMs);
+  pendingTimers.add(timer);
+}
+
+export function clearPendingTones(): void {
+  for (const timer of pendingTimers) clearTimeout(timer);
+  pendingTimers.clear();
+}
 
 export function initAudioWorker(): void {
   if (audioWorker && !audioWorker.killed) return;
@@ -45,7 +64,7 @@ export function playExclamation(): void {
 
 export function playQuestion(): void {
   playTone(880, 40);
-  setTimeout(() => playTone(1100, 40), 50);
+  scheduleTone(() => playTone(1100, 40), 50);
 }
 
 export function playPunctuation(): void {
@@ -72,11 +91,16 @@ export function cleanupAudioWorker(): void {
 }
 
 export default function (pi: ExtensionAPI): void {
+  // Handle returned by ctx.ui.onTerminalInput; kept so it can be released on
+  // shutdown and on session replacement.
+  let unsubscribeTerminalInput: (() => void) | null = null;
+
   pi.on("session_start", (_event: unknown, ctx: ExtensionContext) => {
     initAudioWorker();
 
     if (ctx.hasUI) {
-      ctx.ui.onTerminalInput((data: string) => {
+      unsubscribeTerminalInput?.();
+      unsubscribeTerminalInput = ctx.ui.onTerminalInput((data: string) => {
         if (!isEnabled) return undefined;
 
         if (data === "\r" || data === "\n") {
@@ -100,6 +124,13 @@ export default function (pi: ExtensionAPI): void {
   });
 
   pi.on("session_shutdown", () => {
+    try {
+      unsubscribeTerminalInput?.();
+    } catch {
+      // Non-fatal: cleanup must never crash the host session.
+    }
+    unsubscribeTerminalInput = null;
+    clearPendingTones();
     cleanupAudioWorker();
   });
 
@@ -162,9 +193,9 @@ export default function (pi: ExtensionAPI): void {
       if (sub === "test") {
         ctx.ui.notify("Testuji zvuky (Enter, !, ?, .)...", "info");
         playEnter();
-        setTimeout(() => playExclamation(), 250);
-        setTimeout(() => playQuestion(), 500);
-        setTimeout(() => playPunctuation(), 800);
+        scheduleTone(() => playExclamation(), 250);
+        scheduleTone(() => playQuestion(), 500);
+        scheduleTone(() => playPunctuation(), 800);
         return;
       }
 

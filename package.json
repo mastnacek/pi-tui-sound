@@ -20,9 +20,9 @@
   "author": "Solo Sith Lord",
   "license": "MIT",
   "peerDependencies": {
-    "@earendil-works/pi-ai": ">=0.80.0",
-    "@earendil-works/pi-coding-agent": ">=0.80.0",
-    "@earendil-works/pi-tui": ">=0.80.0"
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "*",
@@ -35,8 +35,5 @@
     "extensions": [
       "./index.ts"
     ]
-  },
-  "dependencies": {
-    "typebox": "^1.3.19"
   }
 }
