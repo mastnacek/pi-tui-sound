@@ -91,39 +91,47 @@ export function cleanupAudioWorker(): void {
 }
 
 export default function (pi: ExtensionAPI): void {
+  const unsubscribers: Array<() => void> = [];
+  const track = (result: unknown): void => {
+    if (typeof result === "function") unsubscribers.push(result as () => void);
+  };
+
   // Handle returned by ctx.ui.onTerminalInput; kept so it can be released on
   // shutdown and on session replacement.
   let unsubscribeTerminalInput: (() => void) | null = null;
 
-  pi.on("session_start", (_event: unknown, ctx: ExtensionContext) => {
-    initAudioWorker();
+  track(
+    pi.on("session_start", (_event: unknown, ctx: ExtensionContext) => {
+      initAudioWorker();
 
-    if (ctx.hasUI) {
-      unsubscribeTerminalInput?.();
-      unsubscribeTerminalInput = ctx.ui.onTerminalInput((data: string) => {
-        if (!isEnabled) return undefined;
+      if (ctx.hasUI && ctx.mode === "tui") {
+        unsubscribeTerminalInput?.();
+        unsubscribeTerminalInput = ctx.ui.onTerminalInput((data: string) => {
+          if (!isEnabled) return undefined;
 
-        if (data === "\r" || data === "\n") {
-          playEnter();
-        } else if (data === "!") {
-          playExclamation();
-        } else if (data === "?") {
-          playQuestion();
-        } else if (
-          data === "." ||
-          data === "," ||
-          data === ";" ||
-          data === ":"
-        ) {
-          playPunctuation();
-        }
+          if (data === "\r" || data === "\n") {
+            playEnter();
+          } else if (data === "!") {
+            playExclamation();
+          } else if (data === "?") {
+            playQuestion();
+          } else if (
+            data === "." ||
+            data === "," ||
+            data === ";" ||
+            data === ":"
+          ) {
+            playPunctuation();
+          }
 
-        return undefined;
-      });
-    }
-  });
+          return undefined;
+        });
+      }
+    }),
+  );
 
   pi.on("session_shutdown", () => {
+    while (unsubscribers.length > 0) unsubscribers.pop()?.();
     try {
       unsubscribeTerminalInput?.();
     } catch {

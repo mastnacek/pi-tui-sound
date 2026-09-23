@@ -5,6 +5,12 @@
   "type": "module",
   "main": "index.ts",
   "types": "index.ts",
+  "files": [
+    "index.ts",
+    "README.md",
+    "LICENSE",
+    "package.json"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "tsc && node --test dist/test/*.test.js"
@@ -20,9 +26,11 @@
   "author": "Solo Sith Lord",
   "license": "MIT",
   "peerDependencies": {
+    "@earendil-works/pi-agent-core": "*",
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
-    "@earendil-works/pi-tui": "*"
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
   },
   "devDependencies": {
     "@earendil-works/pi-ai": "*",
